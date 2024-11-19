@@ -9,7 +9,7 @@
 2. **Usage**
    
     ```bash
-    python3 NotifyAPI.py <message>
+    python3 NotifyAPI.py <-p/t> <picture file/text message>
     ```
 
 3. **Reference**
