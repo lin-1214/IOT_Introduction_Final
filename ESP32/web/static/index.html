@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP32 Configuration</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .config-form {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"],
+        input[type="password"],
+        input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <script>
+        async function checkAuth() {
+            try {
+                const response = await fetch('/check-auth');
+                if (!response.ok) {
+                    // Redirect to login page if not authenticated
+                    window.location.href = '/login.html';
+                }
+            } catch (error) {
+                console.error('Auth check failed:', error);
+                window.location.href = '/login.html';
+            }
+        }
+        
+        // Check authentication when page loads
+        checkAuth();
+    </script>
+
+    <div class="config-form">
+        <h1>ESP32 Configuration</h1>
+        <form id="espConfig" onsubmit="saveConfig(event)">
+            <div class="form-group">
+                <label for="config1">Config 1:</label>
+                <input type="text" id="config1" name="config1" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="config2">Config 2:</label>
+                <input type="text" id="config2" name="config2" required>
+            </div>
+
+            <div class="form-group">
+                <label for="config3">Config 3:</label>
+                <input type="text" id="config3" name="config3" required>
+            </div>
+
+            <div class="form-group">
+                <label for="config4">Config 4:</label>
+                <input type="text" id="config4" name="config4" required>
+            </div>
+
+            <div class="form-group">
+                <label for="config5">Config 5:</label>
+                <input type="text" id="config5" name="config5" required>
+            </div>
+
+            <button type="submit">Save Configuration</button>
+        </form>
+    </div>
+
+    <script>
+        async function saveConfig(event) {
+            event.preventDefault();
+            
+            const formData = {
+                config1: document.getElementById('config1').value,
+                config2: document.getElementById('config2').value,
+                config3: document.getElementById('config3').value,
+                config4: document.getElementById('config4').value,
+                config5: document.getElementById('config5').value
+            };
+
+            try {
+                const response = await fetch('/save-config', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                if (response.ok) {
+                    alert('Configuration saved successfully!');
+                    // Clear all input fields
+                    document.getElementById('espConfig').reset();
+                } else {
+                    alert('Failed to save configuration');
+                }
+            } catch (error) {
+                alert('Error saving configuration: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>
