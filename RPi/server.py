@@ -4,6 +4,17 @@ import subprocess
 from flask_cors import CORS
 from dotenv import load_dotenv
 import requests
+import RPi.GPIO as GPIO
+import time
+import atexit
+
+LED_PIN = 23
+BUZZER_PIN = 24
+
+# Set up GPIO
+GPIO.setmode(GPIO.BCM)  # Use BCM pin numbering
+GPIO.setup(LED_PIN, GPIO.OUT)  # Set up pin as output
+GPIO.setup(BUZZER_PIN, GPIO.OUT)  # Set up pin as output
 
 # Load environment variables
 load_dotenv()
@@ -86,12 +97,33 @@ def save_config():
     global current_config
     
     current_config = {
-        'config1': data.get('config1'),
+        'config1': data.get('config1'),  # This is the confidence threshold
         'config2': data.get('config2'),
         'config3': data.get('config3'),
         'config4': data.get('config4'),
         'config5': data.get('config5')
     }
+    
+    # Send confidence threshold to all ESP32s
+    confidence = data.get('config1')
+    try:
+        for esp32_ip in ESP32_IPS:
+            esp32_url = f'http://{esp32_ip}/confidence'
+            print(f"Sending confidence threshold {confidence} to ESP32 at {esp32_ip}")
+            
+            response = requests.post(
+                esp32_url,
+                json={'confidence': float(confidence)},
+                timeout=5,
+                headers={'Content-Type': 'application/json'}
+            )
+            
+            if response.status_code != 200:
+                print(f"Warning: ESP32 at {esp32_ip} returned status code {response.status_code}")
+                
+    except Exception as e:
+        print(f"Error sending confidence to ESP32s: {str(e)}")
+        return jsonify({"status": "error", "message": str(e)}), 500
     
     print("Saved configuration:", current_config)
     return jsonify({"status": "success"}), 200
@@ -112,8 +144,14 @@ def esp32_message():
         message = data.get('message')
         print(f"Received message from ESP32: {message}")
 
-        warning_test = "Warning: This is a test message"
-        # run_subprocess(["python3", "notify.py", "-t", warning_test])
+        # Trigger GPIO signal
+        for i in range(3):
+            GPIO.output(LED_PIN, GPIO.HIGH)  # Set pin high
+            GPIO.output(BUZZER_PIN, GPIO.HIGH)  # Set pin high
+            time.sleep(0.5)  # Keep signal high for 100ms
+            GPIO.output(LED_PIN, GPIO.LOW)   # Set pin back to low
+            GPIO.output(BUZZER_PIN, GPIO.LOW)  # Set pin back to low
+            time.sleep(0.5)  # Keep signal low for 100ms
         
         # Send a proper response back to ESP32
         response = jsonify({"status": "success", "message": "Received your message"})
@@ -138,17 +176,19 @@ def save_line_position():
         data = request.get_json()
         print(f"Received line position request: {data}")
         
-        x_position = data.get('xPosition')  # Relative position (0-1)
-        stream_width = data.get('streamWidth')
         stream_id = data.get('streamId')
+        x_position = data.get('xPosition')  # Relative position (0-1)
+        method = data.get('method')  # Get the method parameter
+        
+       
         
         # Validate input data
-        if None in [x_position, stream_width, stream_id]:
+        if None in [stream_id, method]:
             return jsonify({
                 "status": "error", 
                 "message": "Missing required parameters"
             }), 400
-        
+            
         # Get the corresponding ESP32 IP based on stream ID
         esp32_index = int(stream_id.replace('stream', '')) - 1
         if esp32_index < 0 or esp32_index >= len(ESP32_IPS):
@@ -158,7 +198,7 @@ def save_line_position():
             }), 400
             
         esp32_ip = ESP32_IPS[esp32_index]
-        print(f"Sending position to ESP32 at {esp32_ip}")
+        print(f"Sending {method} command to ESP32 at {esp32_ip}")
         
         # Send position to ESP32
         try:
@@ -167,9 +207,9 @@ def save_line_position():
             
             # Updated payload to match ESP32 expectations
             payload = {
+                'streamId': stream_id,
                 'xPosition': x_position,
-                'streamWidth': stream_width,
-                'streamId': stream_id
+                'method': method
             }
             print(f"Sending payload: {payload}")
             
@@ -205,18 +245,8 @@ def save_line_position():
                 "message": f"Failed to send position to ESP32: {str(e)}"
             }), 500
         
-        # Return success response with position data
-        response_data = {
-            "status": "success",
-            "data": {
-                "relativePosition": x_position,
-                "absolutePosition": absolute_x,
-                "streamWidth": stream_width,
-                "esp32_ip": esp32_ip  # Include ESP32 IP for debugging
-            }
-        }
-        print(f"Sending response: {response_data}")
-        return jsonify(response_data), 200
+        
+        return jsonify({"status": "success"}), 200
         
     except Exception as e:
         print(f"Unexpected error: {str(e)}")
@@ -225,6 +255,12 @@ def save_line_position():
             "message": f"Server error: {str(e)}"
         }), 500
 
+# Add cleanup handler at the end of the file
+def cleanup():
+    GPIO.cleanup()
+
+atexit.register(cleanup)
+
 if __name__ == '__main__':
-    app.run(debug=True, port=8080, host='0.0.0.0')
+    app.run(port=8080, host='0.0.0.0')
     
