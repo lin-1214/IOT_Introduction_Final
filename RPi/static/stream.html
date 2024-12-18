@@ -456,25 +456,17 @@
                     // Calculate relative position (0-1)
                     const relativePosition = analysis.position / canvas.width;
                     
-                    // Send position to server
+                    // Send position to server with 'draw' method
                     fetch('/save-line-position', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
                         },
                         body: JSON.stringify({
+                            streamId: currentStream,
                             xPosition: relativePosition,
-                            streamWidth: canvas.width,
-                            streamId: currentStream
+                            method: 'draw'  // Set method to 'draw'
                         })
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.status === "success") {
-                            console.log("Relative position:", data.data.relativePosition);
-                            console.log("Absolute position:", data.data.absolutePosition);
-                            console.log("Stream width:", data.data.streamWidth);
-                        }
                     })
                     .catch(error => console.error('Error saving line position:', error));
                     
@@ -545,6 +537,20 @@
         document.getElementById('clearDrawing').addEventListener('click', function() {
             // Clear the entire canvas
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Send clear command to server
+            fetch('/save-line-position', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    streamId: currentStream,
+                    xPosition: 0,  // Send 0 for clear operation
+                    method: 'clear'  // Set method to 'clear'
+                })
+            })
+            .catch(error => console.error('Error sending clear command:', error));
             
             // Clear any pending timeout that would draw the green line
             if (clearTimeoutId) {
