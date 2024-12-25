@@ -1,0 +1,3 @@
+[submodule "ModelAssistant"]
+	path = ModelAssistant
+	url = git@github.com:Seeed-Studio/ModelAssistant.git
