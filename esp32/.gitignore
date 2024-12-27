@@ -1,0 +1,14 @@
+.vscode
+build
+sdkconfig
+sdkconfig.old
+*.old
+*.o
+*.s
+.DS_Store
+*.orig
+*.swp
+*dependencies.lock
+*.tflite
+*.lite
+!model_zoo/*.*
