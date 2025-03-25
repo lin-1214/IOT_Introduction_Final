@@ -9,7 +9,7 @@ Final project for 2024 Fall Introduction to IoT @NTUEE
 git submodule update --init --recursive
 ```
 
-2. Install SSCMA. Follow the instructions in [SSCMA](https://sensecraftma.seeed.cc/introduction/installation) from step 1 to step 4 to create a `sscma` virtual environment .
+2. Install SSCMA. Follow the instructions in [SSCMA](https://sensecraftma.seeed.cc/introduction/installation) ([Archive](https://web.archive.org/web/20240529144606/https://sensecraftma.seeed.cc/introduction/installation)) from step 1 to step 4 to create a `sscma` virtual environment .
 
 ```bash
 conda activate sscma
@@ -28,9 +28,9 @@ pip install -r requirements.txt
 
 ```bash
 ### Under the ModelAssistant directory
-### Please put your config file under the `configs/swift_yolo` directory
+### Please put your config file under the `ModelAssistant/configs/swift_yolo` directory
 ### And modify the `data_root` in the config file to the path of the dataset.
-### Or you can use the default config file `configs/swift_yolo_new_crane.py`
+### Or you can copy the default config file `configs/swift_yolo_new_crane.py`
 ## 1. Train
 #  You should modify the config file to set the `data_root` to the path of the dataset.
 #  The config file should be in coco dataset format.
