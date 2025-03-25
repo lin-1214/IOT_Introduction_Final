@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP32 Configuration</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+        }
+        .config-form {
+            background-color: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+        }
+        .config-form:hover {
+            transform: translateY(-5px);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.2em;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #34495e;
+            transition: color 0.3s;
+        }
+        input[type="text"],
+        input[type="password"],
+        input[type="number"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            box-sizing: border-box;
+            transition: all 0.3s;
+            font-size: 16px;
+        }
+        input:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 8px rgba(0, 123, 255, 0.2);
+            outline: none;
+        }
+        button {
+            background: linear-gradient(45deg, #007bff, #00a6ff);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        button:hover {
+            background: linear-gradient(45deg, #0056b3, #007bff);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 123, 255, 0.3);
+        }
+        .config-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .logout-btn {
+            background: linear-gradient(45deg, #dc3545, #ff4757);
+            padding: 8px 15px;
+            width: auto;
+        }
+        
+        .success-message {
+            display: none;
+            background-color: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .input-icon {
+            position: absolute;
+            right: 12px;
+            top: 40px;
+            color: #007bff;
+        }
+        
+        .loading-spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .save-btn {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .save-btn::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 5px;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.5);
+            opacity: 0;
+            border-radius: 100%;
+            transform: scale(1, 1) translate(-50%);
+            transform-origin: 50% 50%;
+        }
+
+        .save-btn:focus:not(:active)::after {
+            animation: ripple 1s ease-out;
+        }
+
+        @keyframes ripple {
+            0% {
+                transform: scale(0, 0);
+                opacity: 0.5;
+            }
+            100% {
+                transform: scale(100, 100);
+                opacity: 0;
+            }
+        }
+        
+        .header-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .stream-btn {
+            background: linear-gradient(45deg, #28a745, #34c759);
+            color: white;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .stream-btn:hover {
+            background: linear-gradient(45deg, #218838, #28a745);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <script>
+        async function checkAuth() {
+            try {
+                const response = await fetch('/check-auth');
+                if (!response.ok) {
+                    // Redirect to login page if not authenticated
+                    window.location.href = '/login.html';
+                }
+            } catch (error) {
+                console.error('Auth check failed:', error);
+                window.location.href = '/login.html';
+            }
+        }
+        
+        // Check authentication when page loads
+        checkAuth();
+    </script>
+
+    <div class="config-form">
+        <div class="config-header">
+            <h1>ESP32 Configuration</h1>
+            <div class="header-buttons">
+                <a href="/stream.html" class="stream-btn">
+                    <i class="fas fa-video"></i> View Stream
+                </a>
+                <button onclick="logout()" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </div>
+        
+        <div id="successMessage" class="success-message">
+            Configuration saved successfully!
+        </div>
+
+        <form id="espConfig" onsubmit="saveConfig(event)">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="config1">Confidenc:</label>
+                    <input type="text" id="config1" name="config1" required>
+                    <i class="fas fa-cog input-icon"></i>
+                </div>
+                
+                <div class="form-group">
+                    <label for="config2">Config 2:</label>
+                    <input type="text" id="config2" name="config2" required>
+                    <i class="fas fa-cog input-icon"></i>
+                </div>
+
+                <div class="form-group">
+                    <label for="config3">Config 3:</label>
+                    <input type="text" id="config3" name="config3" required>
+                    <i class="fas fa-cog input-icon"></i>
+                </div>
+
+                <div class="form-group">
+                    <label for="config4">Config 4:</label>
+                    <input type="text" id="config4" name="config4" required>
+                    <i class="fas fa-cog input-icon"></i>
+                </div>
+
+                <div class="form-group">
+                    <label for="config5">Config 5:</label>
+                    <input type="text" id="config5" name="config5" required>
+                    <i class="fas fa-cog input-icon"></i>
+                </div>
+            </div>
+
+            <button type="submit" class="save-btn">
+                <span id="buttonText">
+                    <i class="fas fa-save"></i> Save Configuration
+                </span>
+                <div id="loadingSpinner" class="loading-spinner"></div>
+            </button>
+        </form>
+    </div>
+
+    <script>
+        function logout() {
+            // Add logout functionality
+            fetch('/logout', {
+                method: 'POST'
+            }).then(() => {
+                window.location.href = '/login.html';
+            });
+        }
+
+        async function saveConfig(event) {
+            event.preventDefault();
+            
+            const button = document.querySelector('.save-btn');
+            const buttonText = document.getElementById('buttonText');
+            const spinner = document.getElementById('loadingSpinner');
+            const successMessage = document.getElementById('successMessage');
+            
+            // Show loading state
+            buttonText.style.display = 'none';
+            spinner.style.display = 'block';
+            button.disabled = true;
+            
+            const formData = {
+                config1: document.getElementById('config1').value,
+                config2: document.getElementById('config2').value,
+                config3: document.getElementById('config3').value,
+                config4: document.getElementById('config4').value,
+                config5: document.getElementById('config5').value
+            };
+
+            try {
+                const response = await fetch('/save-config', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                if (response.ok) {
+                    successMessage.style.display = 'block';
+                    document.getElementById('espConfig').reset();
+                    setTimeout(() => {
+                        successMessage.style.display = 'none';
+                    }, 3000);
+                } else {
+                    throw new Error('Failed to save configuration');
+                }
+            } catch (error) {
+                alert('Error saving configuration: ' + error.message);
+            } finally {
+                // Reset button state
+                buttonText.style.display = 'block';
+                spinner.style.display = 'none';
+                button.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
